@@ -27,5 +27,5 @@ We encourage users to choose the appropriate Node Exporter repository and instal
 ## 4. Important tips
 
 - **Monitoring port**: The monitoring port used by this version of Node Exporter defaults to 745. Please make sure that this port is enabled on your system, otherwise system monitoring will not work properly.
-- **Port Security**" For security reasons, please ensure that only trusted networks and devices are allowed to access this port.
+- **Port Security**: For security reasons, please ensure that only trusted networks and devices are allowed to access this port.
 - **Do not delete unless necessary**: Once installed and enabled, Node Exporter will become an important part of your monitoring system. Do not delete or uninstall Node Exporter unless necessary to avoid affecting the monitoring and performance of the system.
