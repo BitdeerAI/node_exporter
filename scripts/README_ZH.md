@@ -1,8 +1,8 @@
 # Monitor Agent 安装指南
 
-## 一、产品介绍
+## 一、Node Exporter介绍
 
-Node Exporter 是一个用于机器监控的代理，它收集硬件和操作系统的度量标准，并将它们暴露为 Prometheus 格式的 HTTP 服务端点。本仓库的 Node Exporter 基于 Prometheus 官方仓库[node_exporter](https://github.com/prometheus/node_exporter)进行开发，并特别集成了来自 [nvidia_gpu_exporter](https://github.com/utkuozdemir/nvidia_gpu_exporter) 的代码，以便更好地支持 NVIDIA GPU 的监控。
+Node Exporter 是一个用于机器监控的代理，它收集硬件和操作系统的度量标准，并将它们暴露为 [Prometheus](https://prometheus.io/) 格式的 HTTP 服务端点。本仓库的 Node Exporter 基于 Prometheus 官方仓库[node_exporter](https://github.com/prometheus/node_exporter)进行开发，并特别集成了来自 [nvidia_gpu_exporter](https://github.com/utkuozdemir/nvidia_gpu_exporter) 的代码，以便更好地支持 NVIDIA GPU 的监控。
 
 ## 二、安装方法
 

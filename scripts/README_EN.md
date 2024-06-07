@@ -1,8 +1,8 @@
 # Monitor Agent Installation Guide
 
-## 1. Product Introduction
+## 1. Node Exporter Introduction
 
-Node Exporter is an agent for machine monitoring that collects hardware and operating system metrics and exposes them as HTTP service endpoints in Prometheus format. The Node Exporter in this repository is developed based on the official Prometheus repository [node_exporter](https://github.com/prometheus/node_exporter), and specially integrates the code from [nvidia_gpu_exporter](https://github.com/utkuozdemir/nvidia_gpu_exporter) to better support NVIDIA GPU monitoring.
+Node Exporter is an agent for machine monitoring that collects hardware and operating system metrics and exposes them as HTTP service endpoints in [Prometheus](https://prometheus.io/) format. The Node Exporter in this repository is developed based on the official Prometheus repository [node_exporter](https://github.com/prometheus/node_exporter), and specially integrates the code from [nvidia_gpu_exporter](https://github.com/utkuozdemir/nvidia_gpu_exporter) to better support NVIDIA GPU monitoring.
 
 ## 2. Installation Method
 
