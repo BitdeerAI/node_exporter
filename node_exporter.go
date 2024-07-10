@@ -37,6 +37,7 @@ import (
 	"github.com/prometheus/exporter-toolkit/web"
 	"github.com/prometheus/exporter-toolkit/web/kingpinflag"
 	"github.com/prometheus/node_exporter/collector"
+	"github.com/prometheus/node_exporter/internal/exporter"
 )
 
 // handler wraps an unfiltered http.Handler but uses a filtered handler,
@@ -121,6 +122,15 @@ func (h *handler) innerHandler(filters ...string) (http.Handler, error) {
 
 	r := prometheus.NewRegistry()
 	r.MustRegister(versioncollector.NewCollector("node_exporter"))
+
+	// Register nvidia-smi collector
+	exp, err := exporter.New(exporter.DefaultPrefix, "nvidia-smi", "AUTO", h.logger)
+	if err != nil {
+		_ = level.Error(h.logger).Log("msg", "Error on creating gpu exporter", "err", err)
+		return nil, fmt.Errorf("couldn't register gpu collector: %s", err)
+	}
+	r.MustRegister(exp)
+
 	if err := r.Register(nc); err != nil {
 		return nil, fmt.Errorf("couldn't register node collector: %s", err)
 	}
