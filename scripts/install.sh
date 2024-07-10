@@ -4,7 +4,7 @@
 set -e
 
 # Variable definitions
-sha256sum="52037ffc03580bbd4dbd2164fd32cbc65db0f3c07bb5ddf8667d31b9de8dbc44"
+sha256sum="f0c6d15962b56a2d58b9b10f9733dc087d49bd045f87ee4a038c76a5ae8c8d84"
 version="v1.0"
 
 name="node_exporter_amd64"
