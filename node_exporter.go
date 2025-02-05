@@ -19,6 +19,7 @@ import (
 	"net/http"
 	_ "net/http/pprof"
 	"os"
+	"os/exec"
 	"os/user"
 	"runtime"
 	"sort"
@@ -74,6 +75,15 @@ func newHandler(includeExporterMetrics bool, maxRequests int, logger log.Logger)
 	return h
 }
 
+func checkNvidiaSmiExists() bool {
+	cmd := exec.Command("nvidia-smi", "-L")
+	if err := cmd.Run(); err != nil {
+		// The command failed to execute, possibly because the command does not exist or other errors
+		return false
+	}
+	return true
+}
+
 // ServeHTTP implements http.Handler.
 func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	filters := r.URL.Query()["collect[]"]
@@ -123,13 +133,15 @@ func (h *handler) innerHandler(filters ...string) (http.Handler, error) {
 	r := prometheus.NewRegistry()
 	r.MustRegister(versioncollector.NewCollector("node_exporter"))
 
-	// Register nvidia-smi collector
-	exp, err := exporter.New(exporter.DefaultPrefix, "nvidia-smi", "AUTO", h.logger)
-	if err != nil {
-		_ = level.Error(h.logger).Log("msg", "Error on creating gpu exporter", "err", err)
-		return nil, fmt.Errorf("couldn't register gpu collector: %s", err)
+	if checkNvidiaSmiExists() {
+		// Register nvidia-smi collector
+		exp, err := exporter.New(exporter.DefaultPrefix, "nvidia-smi", "AUTO", h.logger)
+		if err != nil {
+			_ = level.Error(h.logger).Log("msg", "Error on creating gpu exporter", "err", err)
+			return nil, fmt.Errorf("couldn't register gpu collector: %s", err)
+		}
+		r.MustRegister(exp)
 	}
-	r.MustRegister(exp)
 
 	if err := r.Register(nc); err != nil {
 		return nil, fmt.Errorf("couldn't register node collector: %s", err)
