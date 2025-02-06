@@ -4,8 +4,16 @@
 set -e
 
 # Variable definitions
-sha256sum="f0c6d15962b56a2d58b9b10f9733dc087d49bd045f87ee4a038c76a5ae8c8d84"
-version="v1.0"
+sha256sum="793e14c3e9f743461566e7ff4dbd2dc8d038063520f84d42d0138a5ba694db30"
+version="v1.1"
+
+# Set port
+if [ $# -eq 0 ]; then
+  # Default
+  port=745
+else
+  port=$1
+fi
 
 name="node_exporter_amd64"
 gz_name="$name.tar.gz"
@@ -48,7 +56,7 @@ Description=Node Exporter
 After=network.target
 
 [Service]
-ExecStart=$bin_filename --web.listen-address=:745
+ExecStart=$bin_filename --web.listen-address=:$port
 Restart=always
 User=root
 

@@ -11,11 +11,14 @@ Node Exporter 是一个用于机器监控的代理，它收集硬件和操作系
 - **直接使用安装命令**: 对于大多数用户来说，直接使用我们提供的安装命令是最快捷的方式。只需在您的终端或命令行界面中输入相应的命令，即可自动下载并安装 Node Exporter。快速安装命令如下:
   
 ```bash
-# If you do not have root privileges, execute this command
+# 如果您没有root权限，请先执行这个脚本
 sudo su -
 
-# Installation Commands
-wget -qO- https://github.com/BitdeerAI/node_exporter/releases/download/v1.0-sh/install.sh | bash
+# 安装命令，默认端口745
+wget -qO- https://github.com/BitdeerAI/node_exporter/releases/download/v1.1/install.sh | bash
+
+# 安装命令，指定端口
+wget -qO- https://github.com/BitdeerAI/node_exporter/releases/download/v1.1/install.sh | bash -s 9100
 ```
   
 - **自行编译安装**: 如果您希望从源代码开始编译 Node Exporter，或者需要对其进行自定义修改，您可以从我们的 GitHub 仓库中克隆代码，并按照说明进行编译和安装。

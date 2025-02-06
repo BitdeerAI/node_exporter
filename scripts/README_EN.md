@@ -14,8 +14,11 @@ We provide two ways to install Node Exporter to meet the needs of different user
 # If you do not have root privileges, execute this command
 sudo su -
 
-# Installation Commands
-wget -qO- https://github.com/BitdeerAI/node_exporter/releases/download/v1.0-sh/install.sh | bash
+# Installation Command for Default Port
+wget -qO- https://github.com/BitdeerAI/node_exporter/releases/download/v1.1/install.sh | bash
+
+# Installation Command for Custom Port
+wget -qO- https://github.com/BitdeerAI/node_exporter/releases/download/v1.1/install.sh | bash -s 9100
 ```
 
 - **Self-compilation and installation**: If you want to compile Node Exporter from source code or need to customize it, you can clone the code from our GitHub repository and follow the instructions to compile and install it.
