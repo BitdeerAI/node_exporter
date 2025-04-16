@@ -18,7 +18,7 @@ sudo su -
 wget -qO- https://github.com/BitdeerAI/node_exporter/releases/download/v1.1/install.sh | bash
 
 # 安装命令，指定端口
-wget -qO- https://github.com/BitdeerAI/node_exporter/releases/download/v1.1/install.sh | bash -s 9100
+wget -qO- https://github.com/BitdeerAI/node_exporter/releases/download/v1.1/install.sh | bash -s -- 9100
 ```
   
 - **自行编译安装**: 如果您希望从源代码开始编译 Node Exporter，或者需要对其进行自定义修改，您可以从我们的 GitHub 仓库中克隆代码，并按照说明进行编译和安装。

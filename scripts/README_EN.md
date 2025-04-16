@@ -18,7 +18,7 @@ sudo su -
 wget -qO- https://github.com/BitdeerAI/node_exporter/releases/download/v1.1/install.sh | bash
 
 # Installation Command for Custom Port
-wget -qO- https://github.com/BitdeerAI/node_exporter/releases/download/v1.1/install.sh | bash -s 9100
+wget -qO- https://github.com/BitdeerAI/node_exporter/releases/download/v1.1/install.sh | bash -s -- 9100
 ```
 
 - **Self-compilation and installation**: If you want to compile Node Exporter from source code or need to customize it, you can clone the code from our GitHub repository and follow the instructions to compile and install it.
