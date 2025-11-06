@@ -325,25 +325,34 @@ func BuildMetricInfo(prefix string, rField RField) MetricInfo {
 
 func BuildFQNameAndMultiplier(prefix string, rField RField) (string, float64) {
 	rFieldStr := string(rField)
-	suffixTransformed := rFieldStr
+	// Always strip the unit (and any text after the first space) from the base name
+	// so that unknown/new units won't leak illegal characters into metric names.
+	base := strings.Split(rFieldStr, " ")[0]
+	suffixTransformed := base
 	multiplier := 1.0
-	split := strings.Split(rFieldStr, " ")[0]
 
 	//nolint:gocritic
 	if strings.HasSuffix(rFieldStr, " [W]") {
-		suffixTransformed = split + "_watts"
+		suffixTransformed = base + "_watts"
 	} else if strings.HasSuffix(rFieldStr, " [MHz]") {
-		suffixTransformed = split + "_clock_hz"
+		suffixTransformed = base + "_clock_hz"
 		multiplier = 1000000
 	} else if strings.HasSuffix(rFieldStr, " [MiB]") {
-		suffixTransformed = split + "_bytes"
+		suffixTransformed = base + "_bytes"
 		multiplier = 1048576
 	} else if strings.HasSuffix(rFieldStr, " [%]") {
-		suffixTransformed = split + "_ratio"
+		suffixTransformed = base + "_ratio"
 		multiplier = 0.01
+	} else if strings.HasSuffix(rFieldStr, " [us]") {
+		// Convert microseconds to seconds and encode unit in the metric name
+		suffixTransformed = base + "_seconds"
+		multiplier = 0.000001
 	}
 
 	metricName := util.ToSnakeCase(strings.ReplaceAll(suffixTransformed, ".", "_"))
+	// Extra safety: replace any remaining illegal chars to comply with Prometheus metric name rules
+	// (should be redundant after stripping unit, but keeps us future-proof)
+	metricName = regexp.MustCompile(`[^a-zA-Z0-9_:]`).ReplaceAllString(metricName, "_")
 	fqName := prometheus.BuildFQName(prefix, "", metricName)
 
 	return fqName, multiplier
