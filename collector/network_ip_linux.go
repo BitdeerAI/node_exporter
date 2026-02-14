@@ -1,21 +1,22 @@
 package collector
 
 import (
-	"github.com/go-kit/log"
-	"github.com/prometheus/client_golang/prometheus"
+	"log/slog"
 	"net"
+
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 type networkIPCollector struct {
 	interfaceIPStatus *prometheus.Desc
-	logger            log.Logger
+	logger            *slog.Logger
 }
 
 func init() {
 	registerCollector("network_ip", defaultEnabled, NewNetworkIPCollector)
 }
 
-func NewNetworkIPCollector(logger log.Logger) (Collector, error) {
+func NewNetworkIPCollector(logger *slog.Logger) (Collector, error) {
 	return &networkIPCollector{
 		logger: logger,
 		interfaceIPStatus: prometheus.NewDesc(
@@ -35,7 +36,7 @@ func (c *networkIPCollector) Update(ch chan<- prometheus.Metric) error {
 	for _, iface := range interfaces {
 		addrs, err := iface.Addrs()
 		if err != nil {
-			c.logger.Log("msg", "Failed to get addresses for interface", "interface", iface.Name, "err", err)
+			c.logger.Warn("Failed to get addresses for interface", "interface", iface.Name, "err", err)
 			continue
 		}
 

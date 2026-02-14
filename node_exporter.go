@@ -14,6 +14,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -158,10 +159,12 @@ func (h *handler) innerHandler(filters ...string) (http.Handler, error) {
 	r.MustRegister(versioncollector.NewCollector("node_exporter"))
 
 	if checkNvidiaSmiExists() {
-		// Register nvidia-smi collector
-		exp, err := exporter.New(exporter.DefaultPrefix, "nvidia-smi", "AUTO", h.logger)
+		// Register nvidia-smi GPU collector with background context
+		// (lifecycle managed by node_exporter, not the GPU exporter itself)
+		gpuCtx, gpuCancel := context.WithCancelCause(context.Background())
+		exp, err := exporter.New(gpuCtx, gpuCancel, exporter.DefaultPrefix, "nvidia-smi", "AUTO", h.logger)
 		if err != nil {
-			_ = level.Error(h.logger).Log("msg", "Error on creating gpu exporter", "err", err)
+			h.logger.Error("Error on creating gpu exporter", "err", err)
 			return nil, fmt.Errorf("couldn't register gpu collector: %s", err)
 		}
 		r.MustRegister(exp)
