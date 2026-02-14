@@ -12,7 +12,6 @@
 // limitations under the License.
 
 //go:build !notherm
-// +build !notherm
 
 package collector
 
@@ -47,9 +46,11 @@ import "C"
 import (
 	"errors"
 	"fmt"
+	"log/slog"
 	"unsafe"
 
-	"github.com/go-kit/log"
+	"github.com/prometheus/node_exporter/collector/utils"
+
 	"github.com/prometheus/client_golang/prometheus"
 )
 
@@ -57,7 +58,7 @@ type thermCollector struct {
 	cpuSchedulerLimit typedDesc
 	cpuAvailableCPU   typedDesc
 	cpuSpeedLimit     typedDesc
-	logger            log.Logger
+	logger            *slog.Logger
 }
 
 const thermal = "thermal"
@@ -67,7 +68,7 @@ func init() {
 }
 
 // NewThermCollector returns a new Collector exposing current CPU power levels.
-func NewThermCollector(logger log.Logger) (Collector, error) {
+func NewThermCollector(logger *slog.Logger) (Collector, error) {
 	return &thermCollector{
 		cpuSchedulerLimit: typedDesc{
 			desc: prometheus.NewDesc(
@@ -176,7 +177,7 @@ func mappingCFStringToString(s C.CFStringRef) string {
 	buf := make([]byte, maxBufLen)
 	var usedBufLen C.CFIndex
 	_ = C.CFStringGetBytes(s, C.CFRange{0, length}, C.kCFStringEncodingUTF8, C.UInt8(0), C.false, (*C.UInt8)(&buf[0]), maxBufLen, &usedBufLen)
-	return string(buf[:usedBufLen])
+	return utils.SafeBytesToString(buf[:usedBufLen])
 }
 
 func mappingCFNumberLongToInt(n C.CFNumberRef) int {
