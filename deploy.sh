@@ -6,6 +6,7 @@
 # Output:
 #   build/node_exporter_amd64.tar.gz
 #   build/node_exporter_arm64.tar.gz
+#   build/install.sh          (SHA256 and version auto-filled)
 #   build/sha256sums.txt
 
 set -e
@@ -48,9 +49,25 @@ echo ""
 cat sha256sums.txt
 cd ..
 
+# Generate install.sh with SHA256 values populated
+echo ""
+echo "==> Generating install.sh..."
+AMD64_HASH=$(awk '/amd64/{print $1}' "${BUILD_DIR}/sha256sums.txt")
+ARM64_HASH=$(awk '/arm64/{print $1}' "${BUILD_DIR}/sha256sums.txt")
+
+cp scripts/install.sh "${BUILD_DIR}/install.sh"
+if [[ "$(uname)" == "Darwin" ]]; then
+  sed -i '' "s|^VERSION=.*|VERSION=\"${VERSION}\"|" "${BUILD_DIR}/install.sh"
+  sed -i '' "s|^SHA256_AMD64=.*|SHA256_AMD64=\"${AMD64_HASH}\"|" "${BUILD_DIR}/install.sh"
+  sed -i '' "s|^SHA256_ARM64=.*|SHA256_ARM64=\"${ARM64_HASH}\"|" "${BUILD_DIR}/install.sh"
+else
+  sed -i "s|^VERSION=.*|VERSION=\"${VERSION}\"|" "${BUILD_DIR}/install.sh"
+  sed -i "s|^SHA256_AMD64=.*|SHA256_AMD64=\"${AMD64_HASH}\"|" "${BUILD_DIR}/install.sh"
+  sed -i "s|^SHA256_ARM64=.*|SHA256_ARM64=\"${ARM64_HASH}\"|" "${BUILD_DIR}/install.sh"
+fi
+echo "    install.sh generated (VERSION=${VERSION}, SHA256 auto-filled)"
+
 # Print summary
 echo ""
-echo "==> Build complete! Archives in ${BUILD_DIR}/:"
-ls -lh "${BUILD_DIR}"/*.tar.gz
-echo ""
-echo "NOTE: Update the SHA256 values in scripts/install.sh before releasing."
+echo "==> Build complete! Release files in ${BUILD_DIR}/:"
+ls -lh "${BUILD_DIR}"/node_exporter_*.tar.gz "${BUILD_DIR}/install.sh"

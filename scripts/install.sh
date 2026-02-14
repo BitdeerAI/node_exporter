@@ -10,8 +10,8 @@ set -e
 # ========================= Configuration =========================
 VERSION="v1.1"
 # SHA256 checksums for release verification (update after each build)
-SHA256_AMD64="34a6e5b46e20045bc55f7316eb34b71ff8dd310c3cfee0ccc8d39f343e9638c6"
-SHA256_ARM64="deadafb1e73a847055874af472f22320f6df53e19dcd160356f264353d8d9068"
+SHA256_AMD64="3459975e53e3e3fda3f49f5d21147429912ad3e42734be2a879573588dac9a1d"
+SHA256_ARM64="1f7e13514fd804ef0f1b250c7ec1adab583d204e6d37799730956567293d5f24"
 
 INSTALL_DIR="/usr/local/bin"
 BIN_NAME="node_exporter"
