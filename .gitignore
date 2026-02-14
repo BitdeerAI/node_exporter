@@ -28,6 +28,8 @@ dependencies-stamp
 /.tarballs
 /build
 
+tools/tools
+
 # Intellij
 
 /.idea
