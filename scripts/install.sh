@@ -1,62 +1,145 @@
 #!/bin/bash
+# Node Exporter installation script with automatic architecture detection.
+# Supports linux/amd64 and linux/arm64.
+#
+# Usage: sudo bash install.sh [port]
+#   port: listening port, defaults to 745
 
-# Set to exit the script if any command returns a non-zero status
 set -e
 
-# Variable definitions
-sha256sum="793e14c3e9f743461566e7ff4dbd2dc8d038063520f84d42d0138a5ba694db30"
-version="v1.1"
+# ========================= Configuration =========================
+VERSION="v1.1"
+# SHA256 checksums for release verification (update after each build)
+SHA256_AMD64="34a6e5b46e20045bc55f7316eb34b71ff8dd310c3cfee0ccc8d39f343e9638c6"
+SHA256_ARM64="deadafb1e73a847055874af472f22320f6df53e19dcd160356f264353d8d9068"
 
-# Set port
-if [ $# -eq 0 ]; then
-  # Default
-  port=745
-else
-  port=$1
-fi
+INSTALL_DIR="/usr/local/bin"
+BIN_NAME="node_exporter"
+SERVICE_NAME="node_exporter"
+DOWNLOAD_BASE_URL="https://github.com/BitdeerAI/node_exporter/releases/download/${VERSION}"
+# =================================================================
 
-name="node_exporter_amd64"
-gz_name="$name.tar.gz"
-file_url="https://github.com/BitdeerAI/node_exporter/releases/download/$version/$gz_name"
-tmp_file="/tmp/$gz_name"
-tmp_dir="/tmp/$name"
-tmp_bin="$tmp_dir/node_exporter"
-bin_filename="/usr/local/bin/node_exporter_amd64"
+# Color output helpers
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m'
 
-if [ -f "$bin_filename" ]; then  
-  echo "Installation exited because the NodeExporter already exists."
-  exit 1
-fi
+info()    { echo -e "${GREEN}[INFO]${NC}  $1"; }
+warn()    { echo -e "${YELLOW}[WARN]${NC}  $1"; }
+fail()    { echo -e "${RED}[ERROR]${NC} $1"; exit 1; }
 
-# Donwload node_exporter release file
-wget "$file_url" -P /tmp
-computed_hash=$(sha256sum "$tmp_file" | awk '{print $1}')
+# ========================= Functions =============================
 
-if [[ "$computed_hash" != "$sha256sum" ]]; then
-  echo "File verification failed"
-  rm -rf "$tmp_file"
-  exit 1
-fi
+# Check root privileges
+check_root() {
+  if [ "$(id -u)" -ne 0 ]; then
+    fail "This script must be run as root. Please use: sudo bash $0"
+  fi
+}
 
-# Unpack the tar file
-tar -xzf "$tmp_file" -C /tmp
-rm "$tmp_file"
+# Detect system architecture and map to Go arch name
+detect_arch() {
+  local machine
+  machine=$(uname -m)
+  case "$machine" in
+    x86_64|amd64)    ARCH="amd64" ;;
+    aarch64|arm64)   ARCH="arm64" ;;
+    *)               fail "Unsupported architecture: $machine. Only amd64 and arm64 are supported." ;;
+  esac
+  info "Detected architecture: ${ARCH} (${machine})"
+}
 
-# Set executable permissions for the downloaded binary file
-chmod a+x "$tmp_bin"
+# Parse command-line arguments
+parse_args() {
+  PORT="${1:-745}"
+  info "Listening port: ${PORT}"
+}
 
-# Move the binary file to the destination folder
-cp "$tmp_bin" "$bin_filename"
-rm -rf "$tmp_dir"
+# Get expected sha256 hash for current architecture
+get_expected_hash() {
+  case "$ARCH" in
+    amd64) EXPECTED_HASH="$SHA256_AMD64" ;;
+    arm64) EXPECTED_HASH="$SHA256_ARM64" ;;
+  esac
+}
 
-# Create Systemd service file
-cat > /etc/systemd/system/node_exporter.service <<EOF
+# Check if node_exporter is already installed
+check_existing() {
+  if systemctl is-active --quiet "${SERVICE_NAME}" 2>/dev/null; then
+    fail "NodeExporter service is already running. Please uninstall first:\n  sudo bash uninstall.sh"
+  fi
+  if [ -f "${INSTALL_DIR}/${BIN_NAME}" ]; then
+    fail "NodeExporter binary already exists at ${INSTALL_DIR}/${BIN_NAME}. Please uninstall first."
+  fi
+}
+
+# Check required commands
+check_dependencies() {
+  for cmd in wget sha256sum tar systemctl; do
+    if ! command -v "$cmd" &>/dev/null; then
+      fail "Required command not found: ${cmd}. Please install it first."
+    fi
+  done
+}
+
+# Download release archive and verify its integrity
+download_and_verify() {
+  local pkg_name="node_exporter_${ARCH}"
+  local gz_name="${pkg_name}.tar.gz"
+  local file_url="${DOWNLOAD_BASE_URL}/${gz_name}"
+  local tmp_file="/tmp/${gz_name}"
+
+  # Clean up any leftover temp files
+  rm -f "$tmp_file"
+  rm -rf "/tmp/${pkg_name}"
+
+  info "Downloading ${gz_name} (${VERSION})..."
+  if ! wget -q --show-progress "$file_url" -O "$tmp_file"; then
+    rm -f "$tmp_file"
+    fail "Download failed. Please check your network connection.\n  URL: ${file_url}"
+  fi
+
+  info "Verifying file integrity (SHA256)..."
+  local computed_hash
+  computed_hash=$(sha256sum "$tmp_file" | awk '{print $1}')
+  if [ "$computed_hash" != "$EXPECTED_HASH" ]; then
+    rm -f "$tmp_file"
+    fail "SHA256 verification failed!\n  Expected: ${EXPECTED_HASH}\n  Actual:   ${computed_hash}"
+  fi
+  info "SHA256 verification passed."
+
+  # Extract archive
+  info "Extracting archive..."
+  tar -xzf "$tmp_file" -C /tmp
+  rm -f "$tmp_file"
+
+  # Install binary
+  local tmp_bin="/tmp/${pkg_name}/${BIN_NAME}"
+  if [ ! -f "$tmp_bin" ]; then
+    rm -rf "/tmp/${pkg_name}"
+    fail "Binary not found in archive. The package may be corrupted."
+  fi
+
+  chmod a+x "$tmp_bin"
+  cp "$tmp_bin" "${INSTALL_DIR}/${BIN_NAME}"
+  rm -rf "/tmp/${pkg_name}"
+
+  info "Binary installed to ${INSTALL_DIR}/${BIN_NAME}"
+}
+
+# Create and start systemd service
+setup_service() {
+  local bin_path="${INSTALL_DIR}/${BIN_NAME}"
+
+  info "Creating systemd service..."
+  cat > "/etc/systemd/system/${SERVICE_NAME}.service" <<EOF
 [Unit]
 Description=Node Exporter
 After=network.target
 
 [Service]
-ExecStart=$bin_filename --web.listen-address=:$port
+ExecStart=${bin_path} --web.listen-address=:${PORT}
 Restart=always
 User=root
 
@@ -64,14 +147,40 @@ User=root
 WantedBy=multi-user.target
 EOF
 
-# Reload Systemd configuration
-systemctl daemon-reload
+  systemctl daemon-reload
+  systemctl enable "${SERVICE_NAME}.service"
+  systemctl start "${SERVICE_NAME}.service"
 
-# Start and enable the node_exporter service
-systemctl enable node_exporter.service
-systemctl start node_exporter.service
-systemctl status node_exporter.service
+  # Brief pause to let the service start
+  sleep 1
 
-# The installation is complete
-echo "The installation is complete"
-exit 0
+  if systemctl is-active --quiet "${SERVICE_NAME}"; then
+    info "Service ${SERVICE_NAME} is running."
+  else
+    warn "Service may not have started correctly. Check with: systemctl status ${SERVICE_NAME}"
+  fi
+}
+
+# ========================= Main ==================================
+main() {
+  echo ""
+  echo "=========================================="
+  echo "  Node Exporter Installer (${VERSION})"
+  echo "=========================================="
+  echo ""
+
+  check_root
+  check_dependencies
+  detect_arch
+  parse_args "$@"
+  get_expected_hash
+  check_existing
+  download_and_verify
+  setup_service
+
+  echo ""
+  info "Installation complete! Node Exporter is running on port ${PORT}."
+  echo ""
+}
+
+main "$@"
